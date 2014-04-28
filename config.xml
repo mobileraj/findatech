@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="raj.impactdemo.findtech" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>FindTechApp</name>
+    <description>
+        Main App to showcase Geo Location feature of Cloudant
+    </description>
+    <author email="raj_balasubramanian@us.ibm.com" href="http://mobileraj.github.io">
+        @MobileRaj1
+    </author>
+    <content src="index.html" />
+    <access origin="*" />
+</widget>

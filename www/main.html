@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>My Page</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="jquery.mobile.min.css" />
+        <link rel="stylesheet" href="leaflet.css" />
+        <link rel="stylesheet" href="demo.css" />
+        <link rel="stylesheet" href="multiview.css" />
+        <script src="js/jquery-1.7.1.js"></script>
+        <script src="js/jquery.mobile.min.js"></script>
+        <script src="js/multiview.js"></script>
+        <script src="js/jquery-mobile.multiview.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/pouch-plugin.js"></script>
+        <script src="js/filecontrol.js"></script>
+    </head>
+    <body>
+
+        <div data-role="page" data-wrapper="true">
+            <div data-role="panel" data-panel="menu" data-id="menu">
+                <div data-role="page" data-show="first">
+                    <div data-role="header">
+                        <h1>My Menu Header</h1>
+                    </div>
+                    <div data-role="content" id="contents">
+                        <ul data-role="listview" id="listing">
+                            
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div data-role="panel" data-panel="main" data-id="main">
+                <div data-role="page" data-show="first">
+
+                    <div data-role="content" id="maps">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    <script>
+    var curmarkers=[];
+    function getObjects(obj, key, val) {
+            var objects = [];
+            for (var i in obj) {
+                if (!obj.hasOwnProperty(i)) continue;
+                if (typeof obj[i] == 'object') {
+                    objects = objects.concat(getObjects(obj[i], key, val));
+                } else if (i == key && obj[key] == val) {
+                    objects.push(obj);
+                }
+            }
+            return objects;
+        }
+
+    function clearMap(m) {
+        for(i in m._layers) {
+            if(m._layers[i]._path != undefined) {
+                try {
+                    m.removeLayer(m._layers[i]);
+                }
+                catch(e) {
+                    console.log("problem with " + e + m._layers[i]);
+                }
+            }
+        }
+        for(i=0;i<curmarkers.length;i++) {
+            m.removeLayer(curmarkers[i]);
+        }  
+    }
+      var map = L.map('maps').setView([36.1077, -115.1757], 11);
+
+      L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+      }).addTo(map);
+
+      var onEachFeature = function(feature, layer) {
+        var popup = '';
+        for (var prop in feature.properties)
+          if (feature.properties.hasOwnProperty(prop))
+            popup = popup + '<p>' + feature.properties[prop] + '</p>';
+
+        layer.bindPopup(popup);
+      }
+
+
+      var lyrPouch = L.geoJson.Pouch({
+        style: function (feature) {
+          return feature.properties && feature.properties.style;
+        },
+
+        onEachFeature: onEachFeature,
+
+        pointToLayer: function (feature, latlng) {
+          return L.circleMarker(latlng, {
+            radius: 8,
+            fillColor: "#ff7800",
+            color: "#000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+          });
+        },
+        cb : function(msg) {
+          switch (msg.cmd) {
+            case 'centre' :
+              map.panTo(new L.LatLng(msg.value[1], msg.value[0]));
+              break;
+            default:
+              break;
+          }
+        }
+      });
+      lyrPouch.addTo(map);
+      var getarea =function(points){
+        var str='';
+        for (var i=0,len=points.length;i<len;i++){
+          if (str.length > 0) {
+            str=str+','+points[i][0]+' '+points[i][1];
+          } else {
+            str=str+points[i][0]+' '+points[i][1];
+          }
+        }
+        return str;
+      }
+
+
+      var techs=[]
+       $.get( "/techs", function( data2 ) {
+        data = data2.techs;
+        for(var i=0, len=data.length; i<len; i++){
+          techs.push(data[i]);
+        }
+      });
+
+      var myLines = [{
+        "type": "LineString",
+       "coordinates": [[-115.3057, 36.3000], [-115.3057,36.0000], [-115.0057,36.0000],[-115.0057,36.3000],[-115.3057,36.3000]]
+      }];
+      var myarea= "g=POLYGON(("+getarea(myLines[0].coordinates)+"))&relation=contains"  ;
+
+      var myStyle = {
+        "color": "#ff7800",
+        "weight": 5,
+        "opacity": 0.65
+      };
+
+      var bounds = L.geoJson(myLines, {
+        style: myStyle
+      });
+      bounds.addTo(map);
+      
+
+      $.get( "/locs?pol="+myarea, function( data2 ) {
+        data = data2.locs;
+        for(var i=0, len=data.length; i<len; i++){
+          var marker = L.marker([data[i].lat, data[i].lon]);
+          map.addLayer(marker);
+          marker.bindPopup("<b>"+data[i].name+"</b>").openPopup();
+          curmarkers.push(marker);
+        }
+        });
+      var redrawmap=function(coords){
+        clearMap(map);
+        myLines = [{
+        "type": "LineString",
+        "coordinates": getObjects(techs,'iddoc',coords)[0].callarea
+        }];
+        myarea= "g=POLYGON(("+getarea(myLines[0].coordinates)+"))&relation=contains" ;
+        bounds = L.geoJson(myLines, {
+            style: myStyle
+        });
+        bounds.addTo(map);
+        $.get( "/locs?pol="+myarea, function( data2 ) {
+        data = data2.locs;
+        for(var i=0, len=data.length; i<len; i++){
+          var marker = L.marker([data[i].lat, data[i].lon]);
+          map.addLayer(marker);
+          marker.bindPopup("<b>"+data[i].name+"</b>").openPopup();
+          curmarkers.push(marker);
+
+        }
+        });
+
+      }
+      var onselect = function(file){
+        lyrPouch.load(file, 'gpkg');
+      };
+
+    </script>
+    <script>
+        var getarea =function(points){
+        var str='';
+        for (var i=0,len=points.length;i<len;i++){
+          if (str.length > 0) {
+            str=str+','+points[i][0]+' '+points[i][1];
+          } else {
+            str=str+points[i][0]+' '+points[i][1];
+          }
+        }
+            return str;
+        } 
+        $(document).ready(function(){
+            $.get( "/techs", function( data2 ) {
+            data = data2.techs;
+            for(var i=0, len=data.length; i<len; i++){
+             // techs.push(data[i]);
+
+             $("#listing").append("<li onclick='redrawmap(this.id);' id='"+data[i].iddoc+"'>"+data[i].employee+"</li>");
+            }
+          });
+            
+        });
+        </script>
+    </body>
+</html>

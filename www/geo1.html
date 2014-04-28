@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Layout Example</title>
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <link rel="stylesheet" href="jquery.mobile.min.css" />
+ <link rel="stylesheet" href="leaflet.css" />
+ <link rel="stylesheet" href="demo.css" />
+ <link rel="stylesheet" href="multiview.css" />
+<script type="text/javascript" src="js/jquery-1.7.1.js"></script>
+<script type="text/javascript" src="js/jquery-layout.js"></script>
+<script type="text/javascript">
+$(document).ready(function () {
+	$('body').layout({ applyDemoStyles: true });
+});
+</script>
+</head>
+<body>
+<div class="ui-layout-center">Center
+	<p><a href="http://layout.jquery-dev.net/demos.html">Go to the Demos page</a></p>
+	<p>* Pane-resizing is disabled because ui.draggable.js is not linked</p>
+	<p>* Pane-animation is disabled because ui.effects.js is not linked</p>
+</div>
+<div class="ui-layout-west">
+  <div data-role="page" data-wrapper="true">
+    <div data-role="panel" data-panel="menu" data-id="menu">
+        <div data-role="page" data-show="first">
+			<div data-role="header">
+                        <h1>My Menu Header</h1>
+            </div>
+        </div>
+    </div>
+  </div>          
+
+</div>
+</body>
+</html>
